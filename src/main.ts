@@ -134,13 +134,8 @@ processor.run(new TypeormDatabase(), async ctx => {
             const balance = await contract.balanceOf(to).call() // again, the "to" address here is in base58
             ctx.log.info(`There were USDT transfers to ${to} at block ${block.header.height} - it's balance _at the chain head_ is ${balance}`)
         }
-        // Unfortunately the contract API does not allow querying the chain at arbitrary height
-        // This is likely possible with the tronWeb.transactionBuilder.triggerConfirmedConstantContract() method
-        // (a.k.a. https://developers.tron.network/reference/triggerconstantcontract)
-        // Example code TBA
-
-        //await tronWeb.transactionBuilder.triggerConfirmedConstantContract(USDT_ADDRESS_TRON, 'balanceOf(address)', { blockHeader: { ref_block_hash: } }, [{ type: 'address', value: 'ACCOUNT_ADDRESS' }])
-
+        // Unfortunately both the HTTP and the EVM-compatible JSON API of Tron
+        // do not allow querying the chain at arbitrary height
     }
 
     await ctx.store.insert(transfers)
