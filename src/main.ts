@@ -1,12 +1,26 @@
 import {TronBatchProcessor} from '@subsquid/tron-processor'
 import {TypeormDatabase} from '@subsquid/typeorm-store'
 import assert from 'assert'
-import * as erc20 from './abi/erc20'
+import * as erc20 from './evmAbi/erc20'
 import {Transfer} from './model'
+import { TronWeb } from 'tronweb'
+import usdtJsonAbi from './tronAbi/usdt.json'
+import * as tfa from 'tron-format-address'
+
+const TRON_HTTP_API_URL = 'https://rpc.ankr.com/http/tron'
+// A private key is necessary to instantiate TronWeb and make calls to contracts (inc readonly calls)
+const TRON_PRIVATE_KEY = '1'.repeat(64) // if your squid doesn't send txs, almost any 64 hex digits work here
 
 
-const USDT_ADDRESS = 'a614f803b6fd780986a42c78ec9c7f77e6ded13c'
-const TRANSFER_TOPIC = 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+const USDT_ADDRESS_TRON = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+// Similar to the Tron HTTP API, Tron SQD SDK uses hex format without the leading 0x for addresses
+const USDT_ADDRESS_HEX = tfa.toHex(USDT_ADDRESS_TRON).slice(2)
+
+
+// Keccak of 'Transfer(address,address,uint256)' is available from SQD's EVM ERC20 module
+// See https://docs.sqd.dev/sdk/resources/tools/typegen/generation/ to learn more
+// Removing the leading 0x
+const TRANSFER_TOPIC = erc20.events.Transfer.topic.slice(2)
 
 
 const processor = new TronBatchProcessor()
@@ -18,7 +32,7 @@ const processor = new TronBatchProcessor()
     // This is a limitation, and we promise to lift it in the future!
     .setHttpApi({
         // ankr public endpoint is heavily rate-limited so expect many 429 errors
-        url: 'https://rpc.ankr.com/http/tron',
+        url: TRON_HTTP_API_URL,
         strideConcurrency: 1,
         strideSize: 1,
     })
@@ -64,7 +78,7 @@ const processor = new TronBatchProcessor()
     .addLog({
         // select logs
         where: {
-            address: [USDT_ADDRESS],
+            address: [USDT_ADDRESS_HEX],
             topic0: [TRANSFER_TOPIC]
         },
         // for each log selected above
@@ -73,14 +87,23 @@ const processor = new TronBatchProcessor()
             transaction: true
         }
     })
+    .setBlockRange({
+        from: 8418292
+    })
+
+
+const tronWeb = new TronWeb({
+    fullHost: TRON_HTTP_API_URL,
+    privateKey: TRON_PRIVATE_KEY
+})
 
 
 processor.run(new TypeormDatabase(), async ctx => {
-    let transfers: Transfer[] = []
+   let transfers: Transfer[] = []
 
     for (let block of ctx.blocks) {
         for (let log of block.logs) {
-            if (log.address == USDT_ADDRESS && log.topics?.[0] === TRANSFER_TOPIC) {
+            if (log.address == USDT_ADDRESS_HEX && log.topics?.[0] === TRANSFER_TOPIC) {
                 assert(log.data, 'USDT transfers always carry data')
                 let tx = log.getTransaction()
                 // `0x` prefixes make log data compatible with evm codec
@@ -95,12 +118,29 @@ processor.run(new TypeormDatabase(), async ctx => {
                     blockNumber: block.header.height,
                     timestamp: new Date(block.header.timestamp),
                     tx: tx.hash,
-                    from,
-                    to,
+                    // EVM decoder returns address strings with 0x, which is the hex format that tron-format-address understands
+                    from: tfa.fromHex(from),
+                    to: tfa.fromHex(to),
                     amount: value
                 }))
             }
         }
+
+
+        // Suppose we would like to display the most recent balances of all transfer receivers
+        // specifically via state calls
+        const contract = tronWeb.contract(usdtJsonAbi, USDT_ADDRESS_TRON) // note that the address used here is in base58, not in hex
+        for (let { to } of transfers) {
+            const balance = await contract.balanceOf(to).call() // again, the "to" address here is in base58
+            ctx.log.info(`There were USDT transfers to ${to} at block ${block.header.height} - it's balance _at the chain head_ is ${balance}`)
+        }
+        // Unfortunately the contract API does not allow querying the chain at arbitrary height
+        // This is likely possible with the tronWeb.transactionBuilder.triggerConfirmedConstantContract() method
+        // (a.k.a. https://developers.tron.network/reference/triggerconstantcontract)
+        // Example code TBA
+
+        //await tronWeb.transactionBuilder.triggerConfirmedConstantContract(USDT_ADDRESS_TRON, 'balanceOf(address)', { blockHeader: { ref_block_hash: } }, [{ type: 'address', value: 'ACCOUNT_ADDRESS' }])
+
     }
 
     await ctx.store.insert(transfers)
