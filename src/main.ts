@@ -4,8 +4,11 @@ import assert from 'assert'
 import * as erc20 from './evmAbi/erc20'
 import {Transfer} from './model'
 import { TronWeb } from 'tronweb'
-import usdtJsonAbi from './tronAbi/usdt.json'
 import * as tfa from 'tron-format-address'
+// JSON ABIs of contracts are necessary for querying the contract state
+// On Tron, these can be downloaded from Tronscan contract pages ("Contract" tab, scroll to the bottom)
+// Just copying the ABI to clipboard and pasting it to a file is the safest way to extract these
+import usdtJsonAbi from './tronAbi/usdt.json'
 
 const TRON_HTTP_API_URL = 'https://rpc.ankr.com/http/tron'
 // A private key is necessary to instantiate TronWeb and make calls to contracts (inc readonly calls)
