@@ -1,0 +1,11 @@
+manifestVersion: subsquid.io/v0.1
+name: tron-example
+description: 'An example Tron squid'
+build: 
+deploy:
+  addons:
+    postgres: 
+  processor:
+    cmd:
+      - node
+      - lib/main.js
