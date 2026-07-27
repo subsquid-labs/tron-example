@@ -2,6 +2,27 @@
 
 This project shows how one can index TRC-20 transfers using Subsquid SDK.
 
+
+## Accessing the SQD Network gateway
+
+This squid sources historical data from the SQD Network v2 gateway
+(`https://v2.archive.subsquid.io/network/tron-mainnet`). Since May 19, 2026, **self-hosted** squids need an
+API key to access these gateways (see [SQD API keys](https://docs.sqd.dev/en/data/api-keys)):
+
+1. Create a key at [portal.sqd.dev/app](https://portal.sqd.dev/app).
+2. Add it to `.env`: `SQD_API_KEY=your_api_key`.
+3. Pass it to the `.setGateway(...)` call in `src/main.ts`:
+
+   ```ts
+   .setGateway({
+       url: 'https://v2.archive.subsquid.io/network/tron-mainnet',
+       apiKey: process.env.SQD_API_KEY,
+   })
+   ```
+
+Squids deployed to [SQD Cloud](https://docs.sqd.dev/en/cloud/overview) don't need this — the
+platform provides gateway access.
+
 ## Getting started
 
 ### Prerequisites
