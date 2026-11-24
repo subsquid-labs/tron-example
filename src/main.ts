@@ -10,20 +10,14 @@ const TRANSFER_TOPIC = 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4d
 
 
 const processor = new TronBatchProcessor()
-  // Provide Subsquid Network Gateway URL.
-  .setGateway('https://v2.archive.subsquid.io/network/tron-mainnet')
-  // v2 gateways now require an API key when self-hosting (https://docs.sqd.dev/en/data/api-keys):
-  // .setGateway({
-  //     url: 'https://v2.archive.subsquid.io/network/tron-mainnet',
-  //     apiKey: process.env.SQD_API_KEY,
-  // })
-  // Subsquid Network is always about N blocks behind the head.
-  // We must use regular HTTP API endpoint to get through the last mile
-  // and stay on top of the chain.
-  // This is a limitation, and we promise to lift it in the future!
+  // SQD Portal serves finalized blocks, no API key needed.
+  .setPortal('https://portal.sqd.dev/datasets/tron-mainnet')
+  // The Portal's finalized head is a few blocks behind the chain head.
+  // A regular HTTP API endpoint gets the processor through the last mile
+  // and keeps it on top of the chain.
   .setHttpApi({
-    // ankr public endpoint is heavily rate-limited so expect many 429 errors
-    url: 'https://rpc.ankr.com/http/tron',
+    // public endpoint, rate-limited: use a private one in production
+    url: 'https://tron-rpc.publicnode.com',
     strideConcurrency: 1,
     strideSize: 1,
   })
