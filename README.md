@@ -6,7 +6,7 @@ This project shows how one can index TRC-20 transfers using Subsquid SDK.
 ## Data sources
 
 This squid sources finalized historical data from the public [SQD Portal](https://docs.sqd.dev/en/portal/overview)
-(`https://portal.sqd.dev/datasets/tron-mainnet`, no API key needed) and blocks above the Portal's head from a
+(`https://portal.sqd.dev/datasets/tron-mainnet`) and blocks above the Portal's head from a
 TRON HTTP API endpoint. Migrating an older squid from the v2 gateway (`.setGateway(...)`)? See the
 [Portal migration guide](https://docs.sqd.dev/en/sdk/squid-sdk/tron/guides/migration/gateway-to-portal).
 

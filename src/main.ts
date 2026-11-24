@@ -10,7 +10,7 @@ const TRANSFER_TOPIC = 'ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4d
 
 
 const processor = new TronBatchProcessor()
-  // SQD Portal serves finalized blocks, no API key needed.
+  // SQD Portal serves finalized blocks.
   .setPortal('https://portal.sqd.dev/datasets/tron-mainnet')
   // The Portal's finalized head is a few blocks behind the chain head.
   // A regular HTTP API endpoint gets the processor through the last mile
